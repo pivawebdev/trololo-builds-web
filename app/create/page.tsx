@@ -6,8 +6,6 @@ import { Edit3, Save, Eye, LogIn, X } from 'lucide-react';
 import { Auth } from '@supabase/auth-ui-react';
 import { ThemeSupa } from '@supabase/auth-ui-shared';
 
-
-
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -38,15 +36,14 @@ export default function CreateBuildPage() {
 
   const [itemsBySlot, setItemsBySlot] = useState<Record<string, any[]>>({});
   const [categories, setCategories] = useState<any[]>([]);
+  const [loadingSlot, setLoadingSlot] = useState<string | null>(null);
 
-  // Verificar login
+  // Auth
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
-
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
-
     return () => listener.subscription.unsubscribe();
   }, []);
 
@@ -60,14 +57,17 @@ export default function CreateBuildPage() {
   const loadItems = async (slotId: string) => {
     if (itemsBySlot[slotId]?.length > 0) return;
 
+    setLoadingSlot(slotId);
     const { data } = await supabase
       .from('items')
       .select('unique_name, name_pt, tier')
       .eq('slot_type', slotId)
       .order('tier', { ascending: false })
-      .limit(100);
+      .order('name_pt')
+      .limit(120);
 
     setItemsBySlot(prev => ({ ...prev, [slotId]: data || [] }));
+    setLoadingSlot(null);
   };
 
   const updateItem = (slotId: string, value: string) => {
@@ -77,7 +77,6 @@ export default function CreateBuildPage() {
     }));
   };
 
-  // Gerar Preview com Canvas
   const generatePreview = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -110,7 +109,6 @@ export default function CreateBuildPage() {
       });
     }
 
-    // Título
     ctx.fillStyle = '#1f2937';
     ctx.font = 'bold 36px Arial';
     ctx.textAlign = 'center';
@@ -120,11 +118,8 @@ export default function CreateBuildPage() {
   };
 
   const saveBuild = async () => {
-    if (!user) {
-      setShowAuth(true);
-      return;
-    }
-    if (!build.category_id) return alert("❌ Escolha uma categoria!");
+    if (!user) { setShowAuth(true); return; }
+    if (!build.category_id) return alert("Escolha uma categoria!");
 
     const { error } = await supabase.from('saved_builds').insert({
       build_name: build.title,
@@ -133,19 +128,21 @@ export default function CreateBuildPage() {
       creator_id: user.id,
     });
 
-    if (error) alert("Erro: " + error.message);
+    if (error) alert("Erro ao salvar: " + error.message);
     else alert("✅ Build salva com sucesso!");
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-5xl font-bold text-center mb-10">🛠️ Trololo Builds</h1>
+    <div className="min-h-screen bg-zinc-100 text-zinc-900">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <h1 className="text-5xl font-bold text-center mb-10 text-amber-950">
+          🛠️ Criador de Builds
+        </h1>
 
         {showAuth && (
-          <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center">
-            <div className="bg-zinc-900 p-8 rounded-2xl w-full max-w-md relative">
-              <button onClick={() => setShowAuth(false)} className="absolute top-4 right-4 text-gray-400">
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center">
+            <div className="bg-white p-8 rounded-2xl w-full max-w-md relative">
+              <button onClick={() => setShowAuth(false)} className="absolute top-4 right-4">
                 <X size={28} />
               </button>
               <Auth supabaseClient={supabase} providers={['discord']} appearance={{ theme: ThemeSupa }} />
@@ -156,27 +153,27 @@ export default function CreateBuildPage() {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
           {/* Preview */}
           <div className="xl:col-span-5">
-            <div className="bg-zinc-900 rounded-3xl p-8 sticky top-8">
-              <div className="flex justify-between mb-6">
-                <h2 className="text-3xl font-bold">{build.title}</h2>
-                <button onClick={() => alert("Modal de nome em breve")} className="text-blue-400">
-                  <Edit3 size={28} />
+            <div className="bg-white border border-zinc-200 rounded-3xl p-8 sticky top-8 shadow-lg">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-bold text-amber-950">{build.title}</h2>
+                <button onClick={() => alert("Em breve: editar nome com modal")}>
+                  <Edit3 size={28} className="text-amber-600" />
                 </button>
               </div>
 
               <canvas ref={canvasRef} className="hidden" />
 
               {previewImage ? (
-                <img src={previewImage} alt="preview" className="rounded-2xl shadow-2xl w-full" />
+                <img src={previewImage} alt="preview" className="rounded-2xl shadow-xl" />
               ) : (
-                <div className="bg-[#e9d9c4] aspect-square rounded-2xl flex items-center justify-center text-7xl border-4 border-dashed border-zinc-600">
-                  Preview
+                <div className="bg-[#e9d9c4] aspect-square rounded-2xl flex items-center justify-center text-6xl border-4 border-dashed border-amber-300">
+                  Preview da Build
                 </div>
               )}
 
               <button
                 onClick={generatePreview}
-                className="w-full mt-6 bg-blue-600 hover:bg-blue-700 py-4 rounded-2xl font-bold flex items-center justify-center gap-3"
+                className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3"
               >
                 <Eye size={24} /> Gerar Preview
               </button>
@@ -185,39 +182,43 @@ export default function CreateBuildPage() {
 
           {/* Editor */}
           <div className="xl:col-span-7 space-y-6">
-            <div className="bg-zinc-900 p-6 rounded-3xl flex gap-6">
-              <div className="flex-1">
-                <label className="block text-sm mb-2">Nome da Build</label>
-                <input
-                  type="text"
-                  value={build.title}
-                  onChange={(e) => setBuild(p => ({ ...p, title: e.target.value }))}
-                  className="w-full bg-zinc-800 p-4 rounded-2xl text-lg"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-sm mb-2">Categoria</label>
-                <select
-                  className="w-full bg-zinc-800 p-4 rounded-2xl"
-                  onChange={(e) => setBuild(p => ({ ...p, category_id: parseInt(e.target.value) }))}
-                >
-                  <option value="">Selecione uma categoria</option>
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.emoji} {c.name}
-                    </option>
-                  ))}
-                </select>
+            {/* Nome + Categoria */}
+            <div className="bg-white border border-zinc-200 p-8 rounded-3xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Nome da Build</label>
+                  <input
+                    type="text"
+                    value={build.title}
+                    onChange={(e) => setBuild(p => ({ ...p, title: e.target.value }))}
+                    className="w-full border border-zinc-300 p-4 rounded-2xl text-lg focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Categoria</label>
+                  <select
+                    className="w-full border border-zinc-300 p-4 rounded-2xl text-lg"
+                    onChange={(e) => setBuild(p => ({ ...p, category_id: parseInt(e.target.value) }))}
+                  >
+                    <option value="">Selecione uma categoria</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.emoji} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
+            {/* Slots */}
             {slotsConfig.map(slot => (
-              <div key={slot.id} className="bg-zinc-900 p-6 rounded-3xl">
-                <h3 className="text-xl font-semibold mb-4 flex items-center gap-3">
+              <div key={slot.id} className="bg-white border border-zinc-200 p-8 rounded-3xl">
+                <h3 className="text-2xl font-semibold mb-4 flex items-center gap-3">
                   {slot.emoji} {slot.label}
                 </h3>
                 <select
-                  className="w-full bg-zinc-800 p-5 rounded-2xl text-lg"
+                  className="w-full border border-zinc-300 p-5 rounded-2xl text-lg focus:outline-none focus:border-amber-500"
                   onClick={() => loadItems(slot.id)}
                   onChange={(e) => updateItem(slot.id, e.target.value)}
                   value={build.items[slot.id] || ''}
@@ -234,7 +235,7 @@ export default function CreateBuildPage() {
 
             <button
               onClick={saveBuild}
-              className="w-full bg-green-600 hover:bg-green-700 py-6 rounded-3xl font-bold text-2xl flex items-center justify-center gap-4 mt-6"
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-7 rounded-3xl font-bold text-2xl flex items-center justify-center gap-4"
             >
               <Save size={32} /> SALVAR BUILD
             </button>
