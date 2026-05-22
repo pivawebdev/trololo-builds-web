@@ -1,75 +1,71 @@
-'use client'
+// app/admin/itens/page.tsx
+'use client';
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
+import { getItemIconUrl } from '@/lib/albionApi'; // 👈 Importação da nossa nova função
 
 interface Item {
-  id: number
-  unique_name: string
-  name_pt: string
-  name_en: string | null
-  tier: number
-  enchantment: number
-  slot_type: string | null
-  item_power: number | null
+  id: number;
+  unique_name: string;
+  name_pt: string;
+  name_en: string | null;
+  tier: number;
+  enchantment: number;
+  slot_type: string | null;
+  item_power: number | null;
 }
 
 export default function AdminItemsPage() {
-  const [items, setItems] = useState<Item[]>([])
-  const [namePt, setNamePt] = useState('')
-  const [uniqueName, setUniqueName] = useState('')
-  const [tier, setTier] = useState(4)
-  const [slotType, setSlotType] = useState('')
-  const [editingId, setEditingId] = useState<number | null>(null)
+  // ... (mantenha todo o estado e as funções fetch, handleSubmit, editItem, deleteItem iguais ao que você tinha) ...
+  const [items, setItems] = useState<Item[]>([]);
+  const [namePt, setNamePt] = useState('');
+  const [uniqueName, setUniqueName] = useState('');
+  const [tier, setTier] = useState(4);
+  const [slotType, setSlotType] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchItems()
-  }, [])
+    fetchItems();
+  }, []);
 
   async function fetchItems() {
-    const res = await fetch('/api/itens')
-    const data = await res.json()
-    setItems(data)
+    const res = await fetch('/api/itens');
+    const data = await res.json();
+    setItems(data);
   }
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+    e.preventDefault();
     const payload = {
       name_pt: namePt,
       unique_name: uniqueName,
       tier,
       enchantment: 0,
       slot_type: slotType,
-    }
-
-    const url = editingId ? `/api/items?id=${editingId}` : '/api/items'
-    const method = editingId ? 'PUT' : 'POST'
-
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-
-    setNamePt('')
-    setUniqueName('')
-    setTier(4)
-    setSlotType('')
-    setEditingId(null)
-    fetchItems()
+    };
+    const url = editingId ? `/api/items?id=${editingId}` : '/api/items';
+    const method = editingId ? 'PUT' : 'POST';
+    await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    setNamePt('');
+    setUniqueName('');
+    setTier(4);
+    setSlotType('');
+    setEditingId(null);
+    fetchItems();
   }
 
   function editItem(item: Item) {
-    setEditingId(item.id)
-    setNamePt(item.name_pt)
-    setUniqueName(item.unique_name)
-    setTier(item.tier)
-    setSlotType(item.slot_type || '')
+    setEditingId(item.id);
+    setNamePt(item.name_pt);
+    setUniqueName(item.unique_name);
+    setTier(item.tier);
+    setSlotType(item.slot_type || '');
   }
 
   async function deleteItem(id: number) {
     if (confirm('Tem certeza que deseja deletar este item?')) {
-      await fetch(`/api/items?id=${id}`, { method: 'DELETE' })
-      fetchItems()
+      await fetch(`/api/items?id=${id}`, { method: 'DELETE' });
+      fetchItems();
     }
   }
 
@@ -80,12 +76,14 @@ export default function AdminItemsPage() {
           ⚔️ Gerenciar Itens
         </h1>
 
+        {/* Formulário */}
         <div className="bg-[#2c2118] p-6 rounded-lg shadow-lg border border-amber-800/40 mb-8">
           <h2 className="text-xl font-semibold mb-4 text-amber-400">
             {editingId ? '✏️ Editar Item' : '➕ Adicionar Novo Item'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* ... (campos do formulário: Nome, Unique Name, Tier, Slot Type) ... */}
               <div>
                 <label className="block text-sm font-medium text-amber-300/80">Nome (PT) *</label>
                 <input
@@ -137,11 +135,11 @@ export default function AdminItemsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setEditingId(null)
-                    setNamePt('')
-                    setUniqueName('')
-                    setTier(4)
-                    setSlotType('')
+                    setEditingId(null);
+                    setNamePt('');
+                    setUniqueName('');
+                    setTier(4);
+                    setSlotType('');
                   }}
                   className="bg-gray-700 hover:bg-gray-600 text-[#e8dcc5] font-bold py-2 px-6 rounded transition-colors"
                 >
@@ -152,6 +150,7 @@ export default function AdminItemsPage() {
           </form>
         </div>
 
+        {/* Tabela de Itens */}
         <div className="bg-[#2c2118] rounded-lg shadow-lg border border-amber-800/40 overflow-hidden">
           <h2 className="text-xl font-semibold p-4 border-b border-amber-800/40 text-amber-400">
             📦 Itens Cadastrados ({items.length})
@@ -161,6 +160,7 @@ export default function AdminItemsPage() {
               <thead className="bg-[#3d2c1f] text-amber-300">
                 <tr>
                   <th className="text-left p-3">ID</th>
+                  <th className="text-left p-3">Ícone</th>
                   <th className="text-left p-3">Nome (PT)</th>
                   <th className="text-left p-3">Unique Name</th>
                   <th className="text-left p-3">Tier</th>
@@ -172,6 +172,16 @@ export default function AdminItemsPage() {
                 {items.map((item) => (
                   <tr key={item.id} className="border-b border-amber-800/20 hover:bg-[#3d2c1f]/50">
                     <td className="p-3">{item.id}</td>
+                    <td className="p-3">
+                      <img
+                        src={getItemIconUrl(item.unique_name, 32)}
+                        alt={item.name_pt}
+                        className="w-8 h-8 object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/32x32?text=?';
+                        }}
+                      />
+                    </td>
                     <td className="p-3 font-medium">{item.name_pt}</td>
                     <td className="p-3 font-mono text-xs">{item.unique_name}</td>
                     <td className="p-3">T{item.tier}</td>
@@ -198,5 +208,5 @@ export default function AdminItemsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
