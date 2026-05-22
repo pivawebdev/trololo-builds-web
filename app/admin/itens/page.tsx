@@ -21,13 +21,12 @@ export default function AdminItemsPage() {
   const [slotType, setSlotType] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
 
-  // Carregar itens ao iniciar
   useEffect(() => {
     fetchItems()
   }, [])
 
   async function fetchItems() {
-    const res = await fetch('/api/itens')
+    const res = await fetch('/api/items')
     const data = await res.json()
     setItems(data)
   }
@@ -42,7 +41,7 @@ export default function AdminItemsPage() {
       slot_type: slotType,
     }
 
-    const url = editingId ? `/api/itens?id=${editingId}` : '/api/items'
+    const url = editingId ? `/api/items?id=${editingId}` : '/api/items'
     const method = editingId ? 'PUT' : 'POST'
 
     await fetch(url, {
@@ -51,7 +50,6 @@ export default function AdminItemsPage() {
       body: JSON.stringify(payload),
     })
 
-    // Limpar formulário e recarregar lista
     setNamePt('')
     setUniqueName('')
     setTier(4)
@@ -70,7 +68,7 @@ export default function AdminItemsPage() {
 
   async function deleteItem(id: number) {
     if (confirm('Tem certeza que deseja deletar este item?')) {
-      await fetch(`/api/itens?id=${id}`, { method: 'DELETE' })
+      await fetch(`/api/items?id=${id}`, { method: 'DELETE' })
       fetchItems()
     }
   }
@@ -82,7 +80,6 @@ export default function AdminItemsPage() {
           ⚔️ Gerenciar Itens
         </h1>
 
-        {/* Formulário */}
         <div className="bg-[#2c2118] p-6 rounded-lg shadow-lg border border-amber-800/40 mb-8">
           <h2 className="text-xl font-semibold mb-4 text-amber-400">
             {editingId ? '✏️ Editar Item' : '➕ Adicionar Novo Item'}
@@ -155,7 +152,6 @@ export default function AdminItemsPage() {
           </form>
         </div>
 
-        {/* Tabela de Itens */}
         <div className="bg-[#2c2118] rounded-lg shadow-lg border border-amber-800/40 overflow-hidden">
           <h2 className="text-xl font-semibold p-4 border-b border-amber-800/40 text-amber-400">
             📦 Itens Cadastrados ({items.length})
