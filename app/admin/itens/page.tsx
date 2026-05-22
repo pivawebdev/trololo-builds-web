@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '../../../../lib/supabaseClient';
 
 // Interface baseada estritamente na sua tabela do banco
 interface Item {
