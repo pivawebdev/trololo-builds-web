@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { Sword, Users, Trophy, List } from 'lucide-react';
+import Link from "next/link";
+import { Sword, Users, Trophy, List } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -15,26 +15,32 @@ export default function HomePage() {
         </p>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Link href="/create" className="bg-zinc-900 p-8 rounded-3xl hover:scale-105 transition group">
+          <Link
+            href="/create"
+            className="bg-zinc-900 p-8 rounded-3xl hover:scale-105 transition group"
+          >
             <Sword className="mx-auto mb-6 text-5xl text-yellow-400 group-hover:rotate-12 transition" />
             <h3 className="text-2xl font-bold mb-2">Criar Build</h3>
             <p className="text-zinc-400">Monte sua build completa</p>
           </Link>
 
-          <Link href="/itens" className="bg-zinc-900 p-8 rounded-3xl hover:scale-105 transition group">
+          <Link
+            href="/itens"
+            className="bg-zinc-900 p-8 rounded-3xl hover:scale-105 transition group"
+          >
             <List className="mx-auto mb-6 text-5xl text-yellow-400" />
             <h3 className="text-2xl font-bold mb-2">Lista de Itens</h3>
             <p className="text-zinc-400">Ver todos os itens do banco</p>
           </Link>
 
-          <div className="bg-zinc-900 p-8 rounded-3xl hover:scale-105 transition group">
-            <Trophy className="mx-auto mb-6 text-5xl text-yellow-400" />
+          <div className="bg-zinc-900 p-8 rounded-3xl opacity-70">
+            <Users className="mx-auto mb-6 text-5xl text-yellow-400" />
             <h3 className="text-2xl font-bold mb-2">Minhas Builds</h3>
             <p className="text-zinc-400">Em breve</p>
           </div>
 
-          <div className="bg-zinc-900 p-8 rounded-3xl hover:scale-105 transition group">
-            <Users className="mx-auto mb-6 text-5xl text-yellow-400" />
+          <div className="bg-zinc-900 p-8 rounded-3xl opacity-70">
+            <Trophy className="mx-auto mb-6 text-5xl text-yellow-400" />
             <h3 className="text-2xl font-bold mb-2">Builds Públicas</h3>
             <p className="text-zinc-400">Em breve</p>
           </div>
@@ -42,7 +48,7 @@ export default function HomePage() {
 
         <Link
           href="/create"
-          className="inline-block bg-green-600 hover:bg-green-700 px-16 py-6 rounded-2xl text-2xl font-bold transition"
+          className="inline-flex items-center gap-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold py-4 px-8 rounded-2xl transition text-lg"
         >
           COMEÇAR AGORA →
         </Link>
