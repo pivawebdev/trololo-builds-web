@@ -26,7 +26,7 @@ export default function AdminItemsPage() {
   }, [])
 
   async function fetchItems() {
-    const res = await fetch('/api/items')
+    const res = await fetch('/api/itens')
     const data = await res.json()
     setItems(data)
   }
