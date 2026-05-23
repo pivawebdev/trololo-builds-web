@@ -13,7 +13,10 @@ interface Item {
 
 export default function AdminItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
+  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSlot, setSelectedSlot] = useState('');
   const [namePt, setNamePt] = useState('');
   const [uniqueName, setUniqueName] = useState('');
   const [tier, setTier] = useState(4);
@@ -28,7 +31,9 @@ export default function AdminItemsPage() {
     try {
       const res = await fetch('/api/itens');
       const data = await res.json();
-      setItems(Array.isArray(data) ? data : []);
+      const itemsArray = Array.isArray(data) ? data : [];
+      setItems(itemsArray);
+      setFilteredItems(itemsArray);
     } catch (err) {
       setError('Erro ao carregar itens');
     } finally {
@@ -39,6 +44,28 @@ export default function AdminItemsPage() {
   useEffect(() => {
     loadItems();
   }, []);
+
+  // Filtrar itens quando searchTerm ou selectedSlot mudar
+  useEffect(() => {
+    let filtered = [...items];
+    
+    // Filtro por texto (nome ou unique_name)
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        item =>
+          item.name_pt.toLowerCase().includes(term) ||
+          item.unique_name.toLowerCase().includes(term)
+      );
+    }
+    
+    // Filtro por slot
+    if (selectedSlot) {
+      filtered = filtered.filter(item => item.slot_type === selectedSlot);
+    }
+    
+    setFilteredItems(filtered);
+  }, [searchTerm, selectedSlot, items]);
 
   // Limpar mensagens após 3 segundos
   useEffect(() => {
@@ -127,10 +154,23 @@ export default function AdminItemsPage() {
     setSlotType('');
   };
 
+  // Opções de slot para o filtro
+  const slotOptions = [
+    { value: '', label: 'Todos os Slots' },
+    { value: 'head', label: 'Cabeça' },
+    { value: 'armor', label: 'Peito' },
+    { value: 'shoes', label: 'Pés' },
+    { value: 'weapon', label: 'Arma' },
+    { value: 'offhand', label: 'Off-hand' },
+    { value: 'bag', label: 'Bolsa' },
+    { value: 'cape', label: 'Capa' },
+    { value: 'mount', label: 'Montaria' },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#1a120b] text-[#e8dcc5] flex items-center justify-center">
-        Carregando...
+        Carregando itens...
       </div>
     );
   }
@@ -192,14 +232,9 @@ export default function AdminItemsPage() {
                 className="bg-[#3d2c1f] border border-amber-700 rounded px-3 py-2 focus:outline-none focus:border-amber-500"
               >
                 <option value="">Selecione o slot...</option>
-                <option value="head">Cabeça</option>
-                <option value="armor">Peito</option>
-                <option value="shoes">Pés</option>
-                <option value="weapon">Arma</option>
-                <option value="offhand">Off-hand</option>
-                <option value="bag">Bolsa</option>
-                <option value="cape">Capa</option>
-                <option value="mount">Montaria</option>
+                {slotOptions.slice(1).map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
             <div className="flex gap-3">
@@ -222,10 +257,48 @@ export default function AdminItemsPage() {
           </form>
         </div>
 
+        {/* 🔍 BARRA DE BUSCA E FILTROS */}
+        <div className="bg-[#2c2118] p-4 rounded-lg border border-amber-800/40 mb-6">
+          <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="text"
+                placeholder="🔍 Buscar por nome ou unique name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-[#3d2c1f] border border-amber-700 rounded px-4 py-2 text-[#e8dcc5] placeholder:text-amber-800/50 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+            <div>
+              <select
+                value={selectedSlot}
+                onChange={(e) => setSelectedSlot(e.target.value)}
+                className="bg-[#3d2c1f] border border-amber-700 rounded px-4 py-2 text-[#e8dcc5] focus:outline-none focus:border-amber-500"
+              >
+                {slotOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedSlot('');
+              }}
+              className="bg-amber-700 hover:bg-amber-600 text-[#1a120b] font-bold px-4 py-2 rounded"
+            >
+              Limpar Filtros
+            </button>
+          </div>
+          <div className="text-sm text-amber-500/60 mt-3">
+            Mostrando {filteredItems.length} de {items.length} itens
+          </div>
+        </div>
+
         {/* Tabela */}
         <div className="bg-[#2c2118] rounded-lg border border-amber-800/40 overflow-hidden">
           <h2 className="text-xl font-semibold p-4 border-b border-amber-800/40">
-            📦 Itens ({items.length})
+            📦 Itens Cadastrados
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -241,14 +314,14 @@ export default function AdminItemsPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.length === 0 ? (
+                {filteredItems.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="text-center p-8 text-amber-500/60">
-                      Nenhum item cadastrado
+                      {searchTerm || selectedSlot ? 'Nenhum item encontrado com os filtros' : 'Nenhum item cadastrado'}
                     </td>
                   </tr>
                 ) : (
-                  items.map((item) => (
+                  filteredItems.map((item) => (
                     <tr key={item.id} className="border-b border-amber-800/20 hover:bg-[#3d2c1f]/50">
                       <td className="p-3">
                         <img
