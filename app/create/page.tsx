@@ -136,27 +136,66 @@ export default function CreateBuildPage() {
   };
 
   const saveBuild = async () => {
-    if (!user) {
-      setShowAuth(true);
-      return;
+  if (!build.title.trim()) {
+    alert('Por favor, dê um título para sua build');
+    return;
+  }
+
+  // Verificar se pelo menos um item foi selecionado
+  const hasItems = Object.values(build.items).some(item => item);
+  if (!hasItems) {
+    alert('Adicione pelo menos um item à sua build');
+    return;
+  }
+
+  setSaving(true);
+  try {
+    const creatorId = user?.id || 'user_' + Math.random().toString(36).substr(2, 9);
+    const guildId = 'z4zH-G0hRh2E0csA8r6_zw'; // ID da sua guild
+
+    const payload = {
+      build_name: build.title,
+      guild_id: guildId,
+      creator_id: creatorId,
+      weapon_item: build.items.weapon || null,
+      head_item: build.items.head || null,
+      armor_item: build.items.armor || null,
+      shoes_item: build.items.shoes || null,
+      cape_item: build.items.cape || null,
+      category_id: build.category_id || null
+    };
+
+    const res = await fetch('/api/builds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Erro ao salvar');
     }
 
-    if (!build.title.trim()) {
-      alert('Por favor, dê um título para sua build');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      // TODO: Salvar no banco
-      alert('Build salva com sucesso! (em desenvolvimento)');
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      alert('Erro ao salvar build');
-    } finally {
-      setSaving(false);
-    }
-  };
+    alert('✅ Build salva com sucesso!');
+    
+    // Limpar formulário
+    setBuild({
+      title: "Minha Build Incrível",
+      category_id: null,
+      items: {}
+    });
+    
+    // Redirecionar
+    router.push('/builds');
+    
+  } catch (error: any) {
+    console.error('Erro:', error);
+    alert(`❌ Erro ao salvar: ${error.message}`);
+  } finally {
+    setSaving(false);
+  }
+};
 
   // Filtrar itens baseado no termo de busca
   const getFilteredItems = (slotId: string) => {
@@ -368,29 +407,6 @@ export default function CreateBuildPage() {
         </div>
       </div>
 
-      {/* Modal de Login */}
-            {/* Modal de Login - Versão simplificada */}
-      {showAuth && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Login</h2>
-              <button onClick={() => setShowAuth(false)} className="hover:opacity-70">
-                <X size={24} />
-              </button>
-            </div>
-            <p className="text-center text-gray-600 py-8">
-              🔐 Funcionalidade de login em breve!
-            </p>
-            <button
-              onClick={() => setShowAuth(false)}
-              className="w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl font-bold transition"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
