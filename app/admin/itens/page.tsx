@@ -331,10 +331,10 @@ export default function AdminItemsPage() {
                     <tr key={item.id} className="border-b border-amber-800/20 hover:bg-[#3d2c1f]/50">
                       <td className="p-3">
                         <img
-                          src={getItemIconUrl(item.unique_name, 60)}
+                          src={getItemIconUrl(item.unique_name, 64)}
                           alt={item.name_pt}
-                          className="w-10 h-10 object-contain"
-                          onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/40x40?text=?'}
+                          className="w-16 h-16 object-contain"
+                          onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/64x64?text=?'}
                         />
                       </td>
                       <td className="p-3">{item.id}</td>
