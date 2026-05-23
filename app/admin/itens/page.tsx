@@ -43,7 +43,7 @@ export default function AdminItemsPage() {
       enchantment: 0,
       slot_type: slotType,
     };
-    const url = editingId ? `/api/items?id=${editingId}` : '/api/items';
+    const url = editingId ? `/api/itens?id=${editingId}` : '/api/itens';
     const method = editingId ? 'PUT' : 'POST';
     await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     setNamePt('');
@@ -64,7 +64,7 @@ export default function AdminItemsPage() {
 
   async function deleteItem(id: number) {
     if (confirm('Tem certeza que deseja deletar este item?')) {
-      await fetch(`/api/items?id=${id}`, { method: 'DELETE' });
+      await fetch(`/api/itens?id=${id}`, { method: 'DELETE' });
       fetchItems();
     }
   }
