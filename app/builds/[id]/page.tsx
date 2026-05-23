@@ -68,8 +68,9 @@ export default function BuildDetailPage() {
     }
   };
 
-  const getItemIcon = (itemId: string | null, size = 120) => {
-    if (!itemId) return null;
+  // 👇 CORRIGIDA: retorna string, não null
+  const getItemIcon = (itemId: string | null, size = 120): string => {
+    if (!itemId) return '';
     return `https://render.albiononline.com/v1/item/${itemId}.png?size=${size}`;
   };
 
@@ -99,12 +100,10 @@ export default function BuildDetailPage() {
   return (
     <div className="min-h-screen bg-[#1a120b] text-[#e8dcc5]">
       <div className="max-w-6xl mx-auto p-6">
-        {/* Botão voltar */}
         <Link href="/builds" className="inline-flex items-center gap-2 text-amber-500 hover:text-amber-400 mb-6">
           <ArrowLeft size={20} /> Voltar para builds
         </Link>
 
-        {/* Cabeçalho */}
         <div className="bg-[#2c2118] rounded-xl border border-amber-800/40 p-6 mb-8">
           <div className="flex justify-between items-start">
             <div>
@@ -138,19 +137,19 @@ export default function BuildDetailPage() {
           </div>
         </div>
 
-        {/* Preview da Build */}
         {hasItems && (
           <div className="bg-[#2c2118] rounded-xl border border-amber-800/40 p-8 mb-8">
             <h2 className="text-2xl font-bold mb-6 text-amber-400">🛡️ Visualização da Build</h2>
             <div className="relative bg-[#e9d9c4] aspect-square max-w-2xl mx-auto rounded-2xl overflow-hidden border-4 border-amber-800">
               {slotConfig.map((slot) => {
                 const itemId = build[slot.key as keyof Build] as string | null;
-                if (!itemId) return null;
+                const iconUrl = getItemIcon(itemId, 120);
+                if (!iconUrl) return null;
                 
                 return (
                   <div key={slot.key} className="absolute" style={slot.position}>
                     <img
-                      src={getItemIcon(itemId, 120)}
+                      src={iconUrl}
                       alt={slot.label}
                       className="w-[120px] h-[120px] object-contain drop-shadow-lg"
                       onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
@@ -165,18 +164,18 @@ export default function BuildDetailPage() {
           </div>
         )}
 
-        {/* Lista de itens */}
         <div className="bg-[#2c2118] rounded-xl border border-amber-800/40 p-8">
           <h2 className="text-2xl font-bold mb-6 text-amber-400">📦 Itens da Build</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {slotConfig.map((slot) => {
               const itemId = build[slot.key as keyof Build] as string | null;
-              if (!itemId) return null;
+              const iconUrl = getItemIcon(itemId, 48);
+              if (!itemId || !iconUrl) return null;
               
               return (
                 <div key={slot.key} className="flex items-center gap-4 p-3 bg-[#3d2c1f] rounded-lg">
                   <img
-                    src={getItemIcon(itemId, 48)}
+                    src={iconUrl}
                     alt={slot.label}
                     className="w-12 h-12 object-contain"
                     onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
