@@ -18,6 +18,7 @@ export default function AdminItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [namePt, setNamePt] = useState('');
   const [uniqueName, setUniqueName] = useState('');
   const [tier, setTier] = useState(4);
@@ -25,6 +26,8 @@ export default function AdminItemsPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [uniqueNameExists, setUniqueNameExists] = useState(false);
 
   // Buscar itens
   const fetchItems = async () => {
@@ -47,11 +50,35 @@ export default function AdminItemsPage() {
     fetchItems();
   }, []);
 
+  // Verificar se unique_name já existe (exceto o próprio item em edição)
+  useEffect(() => {
+    if (uniqueName.trim() && !editingId) {
+      const exists = items.some(
+        item => item.unique_name.toLowerCase() === uniqueName.trim().toLowerCase()
+      );
+      setUniqueNameExists(exists);
+    } else if (editingId) {
+      const exists = items.some(
+        item => item.unique_name.toLowerCase() === uniqueName.trim().toLowerCase() && item.id !== editingId
+      );
+      setUniqueNameExists(exists);
+    } else {
+      setUniqueNameExists(false);
+    }
+  }, [uniqueName, items, editingId]);
+
+  // Filtrar itens para busca
+  const filteredItems = items.filter(item =>
+    item.name_pt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.unique_name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Criar/Atualizar item
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     setErrorMessage('');
+    setSuccessMessage('');
     
     // Validação básica
     if (!namePt.trim()) {
@@ -61,6 +88,13 @@ export default function AdminItemsPage() {
     }
     if (!uniqueName.trim()) {
       setErrorMessage('O campo Unique Name é obrigatório');
+      setSaving(false);
+      return;
+    }
+    
+    // Verifica duplicata
+    if (uniqueNameExists) {
+      setErrorMessage(`O Unique Name "${uniqueName}" já existe na base de dados!`);
       setSaving(false);
       return;
     }
@@ -74,7 +108,7 @@ export default function AdminItemsPage() {
         enchantment: 0
       };
       
-      console.log('Enviando payload:', payload); // Log para debug
+      console.log('Enviando payload:', payload);
       
       const url = editingId ? `/api/itens?id=${editingId}` : '/api/itens';
       const method = editingId ? 'PUT' : 'POST';
@@ -95,7 +129,10 @@ export default function AdminItemsPage() {
       console.log('Resposta sucesso:', data);
       resetForm();
       fetchItems();
-      alert(editingId ? 'Item atualizado com sucesso!' : 'Item criado com sucesso!');
+      setSuccessMessage(editingId ? 'Item atualizado com sucesso!' : 'Item criado com sucesso!');
+      
+      // Limpa mensagem de sucesso após 3 segundos
+      setTimeout(() => setSuccessMessage(''), 3000);
       
     } catch (error: any) {
       console.error('Erro:', error);
@@ -106,8 +143,8 @@ export default function AdminItemsPage() {
   };
 
   // Deletar item
-  const deleteItem = async (id: number) => {
-    if (!confirm('Tem certeza que deseja deletar este item?')) return;
+  const deleteItem = async (id: number, uniqueName: string) => {
+    if (!confirm(`Tem certeza que deseja deletar o item "${uniqueName}"?`)) return;
     
     try {
       const res = await fetch(`/api/itens?id=${id}`, { method: 'DELETE' });
@@ -116,10 +153,13 @@ export default function AdminItemsPage() {
       if (!res.ok) throw new Error(data.error || 'Erro ao deletar');
       
       fetchItems();
-      alert('Item deletado com sucesso!');
+      setSuccessMessage('Item deletado com sucesso!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
     } catch (error: any) {
       console.error('Erro:', error);
-      alert(error.message || 'Erro ao deletar item');
+      setErrorMessage(error.message || 'Erro ao deletar item');
+      setTimeout(() => setErrorMessage(''), 3000);
     }
   };
 
@@ -131,6 +171,7 @@ export default function AdminItemsPage() {
     setTier(item.tier);
     setSlotType(item.slot_type || '');
     setErrorMessage('');
+    setSuccessMessage('');
   };
 
   const resetForm = () => {
@@ -140,6 +181,7 @@ export default function AdminItemsPage() {
     setTier(4);
     setSlotType('');
     setErrorMessage('');
+    setUniqueNameExists(false);
   };
 
   const handleImageError = (uniqueName: string) => {
@@ -161,7 +203,13 @@ export default function AdminItemsPage() {
           ⚔️ Gerenciar Itens
         </h1>
 
-        {/* Mensagem de erro */}
+        {/* Mensagens */}
+        {successMessage && (
+          <div className="bg-green-900/50 border border-green-700 text-green-300 px-4 py-3 rounded mb-6">
+            ✅ {successMessage}
+          </div>
+        )}
+        
         {errorMessage && (
           <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded mb-6">
             ❌ {errorMessage}
@@ -195,10 +243,17 @@ export default function AdminItemsPage() {
                   type="text" 
                   value={uniqueName} 
                   onChange={(e) => setUniqueName(e.target.value)} 
-                  className="w-full bg-[#3d2c1f] border border-amber-700 rounded px-3 py-2 text-[#e8dcc5] focus:outline-none focus:border-amber-500" 
+                  className={`w-full bg-[#3d2c1f] border rounded px-3 py-2 text-[#e8dcc5] focus:outline-none focus:border-amber-500 ${
+                    uniqueNameExists ? 'border-red-500' : 'border-amber-700'
+                  }`}
                   required 
                   placeholder="Ex: T4_HEAD_CLOTH_SET1"
                 />
+                {uniqueNameExists && (
+                  <p className="text-xs text-red-400 mt-1">
+                    ⚠️ Este Unique Name já existe na base de dados!
+                  </p>
+                )}
                 <p className="text-xs text-amber-500/60 mt-1">
                   Use o mesmo nome da API do Albion
                 </p>
@@ -242,8 +297,10 @@ export default function AdminItemsPage() {
             <div className="flex gap-3 pt-2">
               <button 
                 type="submit" 
-                disabled={saving}
-                className={`bg-amber-700 hover:bg-amber-600 text-[#1a120b] font-bold py-2 px-6 rounded transition-colors ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={saving || uniqueNameExists}
+                className={`bg-amber-700 hover:bg-amber-600 text-[#1a120b] font-bold py-2 px-6 rounded transition-colors ${
+                  (saving || uniqueNameExists) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 {saving ? 'Salvando...' : (editingId ? 'Atualizar Item' : 'Criar Item')}
               </button>
@@ -260,10 +317,28 @@ export default function AdminItemsPage() {
           </form>
         </div>
 
+        {/* Barra de busca */}
+        <div className="bg-[#2c2118] p-4 rounded-lg shadow-lg border border-amber-800/40 mb-6">
+          <div className="flex gap-4 items-center">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="🔍 Buscar por nome ou unique name..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-[#3d2c1f] border border-amber-700 rounded px-4 py-2 text-[#e8dcc5] placeholder:text-amber-800/50 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+            <div className="text-sm text-amber-500/60">
+              Total: {filteredItems.length} / {items.length} itens
+            </div>
+          </div>
+        </div>
+
         {/* Tabela de Itens com Ícones */}
         <div className="bg-[#2c2118] rounded-lg shadow-lg border border-amber-800/40 overflow-hidden">
           <h2 className="text-xl font-semibold p-4 border-b border-amber-800/40 text-amber-400">
-            📦 Itens Cadastrados ({items.length})
+            📦 Itens Cadastrados ({filteredItems.length})
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -279,7 +354,7 @@ export default function AdminItemsPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => {
+                {filteredItems.map((item) => {
                   const iconUrl = getItemIconUrl(item.unique_name, 48);
                   const hasError = imageErrors[item.unique_name];
                   
@@ -312,7 +387,7 @@ export default function AdminItemsPage() {
                           Editar
                         </button>
                         <button 
-                          onClick={() => deleteItem(item.id)} 
+                          onClick={() => deleteItem(item.id, item.unique_name)} 
                           className="bg-red-800 hover:bg-red-700 text-white px-3 py-1 rounded text-xs transition-colors"
                         >
                           Deletar
