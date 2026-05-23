@@ -34,23 +34,23 @@ const slotPositions: Record<string, { top: string; left: string }> = {
 };
 
 export default function CreateBuildPage() {
+  const router = useRouter();  // Única declaração
   const [user, setUser] = useState<any>(null);
-   const router = useRouter();  // 👈 Adicionar esta linha
   const [showAuth, setShowAuth] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [build, setBuild] = useState({
     title: "Minha Build Incrível",
     category_id: null as number | null,
     items: {} as Record<string, string>,
   });
-
   const [itemsBySlot, setItemsBySlot] = useState<Record<string, any[]>>({});
   const [loadingSlots, setLoadingSlots] = useState<Record<string, boolean>>({});
   const [searchTermBySlot, setSearchTermBySlot] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<any[]>([]);
-  const router = useRouter();
+  // ... resto
+}
 
   // Auth
   useEffect(() => {
