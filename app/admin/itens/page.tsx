@@ -9,14 +9,31 @@ interface Item {
   name_pt: string;
   tier: number;
   slot_type: string | null;
+  enchantment: number;
+}
+
+interface ApiResponse {
+  data: Item[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 export default function AdminItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
-  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  
+  // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSlot, setSelectedSlot] = useState('');
+  const [selectedTier, setSelectedTier] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  
+  // Formulário
   const [namePt, setNamePt] = useState('');
   const [uniqueName, setUniqueName] = useState('');
   const [tier, setTier] = useState(4);
@@ -25,15 +42,32 @@ export default function AdminItemsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Carregar itens
+  // Debounce para busca
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Carregar itens com filtros e paginação
   const loadItems = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/itens');
-      const data = await res.json();
-      const itemsArray = Array.isArray(data) ? data : [];
-      setItems(itemsArray);
-      setFilteredItems(itemsArray);
+      const params = new URLSearchParams();
+      params.append('page', currentPage.toString());
+      params.append('limit', '20');
+      if (debouncedSearch) params.append('search', debouncedSearch);
+      if (selectedSlot) params.append('slot_type', selectedSlot);
+      if (selectedTier) params.append('tier', selectedTier);
+      
+      const res = await fetch(`/api/itens?${params.toString()}`);
+      const response: ApiResponse = await res.json();
+      
+      setItems(response.data || []);
+      setTotal(response.total || 0);
+      setTotalPages(response.totalPages || 1);
     } catch (err) {
       setError('Erro ao carregar itens');
     } finally {
@@ -43,31 +77,9 @@ export default function AdminItemsPage() {
 
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [currentPage, debouncedSearch, selectedSlot, selectedTier]);
 
-  // Filtrar itens quando searchTerm ou selectedSlot mudar
-  useEffect(() => {
-    let filtered = [...items];
-    
-    // Filtro por texto (nome ou unique_name)
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        item =>
-          item.name_pt.toLowerCase().includes(term) ||
-          item.unique_name.toLowerCase().includes(term)
-      );
-    }
-    
-    // Filtro por slot
-    if (selectedSlot) {
-      filtered = filtered.filter(item => item.slot_type === selectedSlot);
-    }
-    
-    setFilteredItems(filtered);
-  }, [searchTerm, selectedSlot, items]);
-
-  // Limpar mensagens após 3 segundos
+  // Limpar mensagens
   useEffect(() => {
     if (error || success) {
       const timer = setTimeout(() => {
@@ -78,7 +90,7 @@ export default function AdminItemsPage() {
     }
   }, [error, success]);
 
-  // Salvar (criar ou atualizar)
+  // Salvar item
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -108,9 +120,7 @@ export default function AdminItemsPage() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Erro ao salvar');
-      }
+      if (!res.ok) throw new Error(data.error || 'Erro ao salvar');
 
       setSuccess(editingId ? 'Item atualizado!' : 'Item criado!');
       resetForm();
@@ -127,9 +137,7 @@ export default function AdminItemsPage() {
     try {
       const res = await fetch(`/api/itens?id=${id}`, { method: 'DELETE' });
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || 'Erro ao deletar');
-
       setSuccess('Item deletado!');
       loadItems();
     } catch (err: any) {
@@ -154,7 +162,13 @@ export default function AdminItemsPage() {
     setSlotType('');
   };
 
-  // Opções de slot para o filtro
+  const resetFilters = () => {
+    setSearchTerm('');
+    setSelectedSlot('');
+    setSelectedTier('');
+    setCurrentPage(1);
+  };
+
   const slotOptions = [
     { value: '', label: 'Todos os Slots' },
     { value: 'head', label: 'Cabeça' },
@@ -167,13 +181,14 @@ export default function AdminItemsPage() {
     { value: 'mount', label: 'Montaria' },
   ];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#1a120b] text-[#e8dcc5] flex items-center justify-center">
-        Carregando itens...
-      </div>
-    );
-  }
+  const tierOptions = [
+    { value: '', label: 'Todos os Tiers' },
+    { value: '4', label: 'Tier 4' },
+    { value: '5', label: 'Tier 5' },
+    { value: '6', label: 'Tier 6' },
+    { value: '7', label: 'Tier 7' },
+    { value: '8', label: 'Tier 8' },
+  ];
 
   return (
     <div className="min-h-screen bg-[#1a120b] text-[#e8dcc5] p-6">
@@ -238,18 +253,11 @@ export default function AdminItemsPage() {
               </select>
             </div>
             <div className="flex gap-3">
-              <button
-                type="submit"
-                className="bg-amber-700 hover:bg-amber-600 text-[#1a120b] font-bold px-6 py-2 rounded"
-              >
+              <button type="submit" className="bg-amber-700 hover:bg-amber-600 text-[#1a120b] font-bold px-6 py-2 rounded">
                 {editingId ? 'Atualizar' : 'Criar'}
               </button>
               {editingId && (
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded"
-                >
+                <button type="button" onClick={resetForm} className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded">
                   Cancelar
                 </button>
               )}
@@ -257,7 +265,7 @@ export default function AdminItemsPage() {
           </form>
         </div>
 
-        {/* 🔍 BARRA DE BUSCA E FILTROS */}
+        {/* Filtros */}
         <div className="bg-[#2c2118] p-4 rounded-lg border border-amber-800/40 mb-6">
           <div className="flex flex-wrap gap-4 items-center">
             <div className="flex-1 min-w-[200px]">
@@ -269,37 +277,35 @@ export default function AdminItemsPage() {
                 className="w-full bg-[#3d2c1f] border border-amber-700 rounded px-4 py-2 text-[#e8dcc5] placeholder:text-amber-800/50 focus:outline-none focus:border-amber-500"
               />
             </div>
-            <div>
-              <select
-                value={selectedSlot}
-                onChange={(e) => setSelectedSlot(e.target.value)}
-                className="bg-[#3d2c1f] border border-amber-700 rounded px-4 py-2 text-[#e8dcc5] focus:outline-none focus:border-amber-500"
-              >
-                {slotOptions.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedSlot('');
-              }}
-              className="bg-amber-700 hover:bg-amber-600 text-[#1a120b] font-bold px-4 py-2 rounded"
+            <select
+              value={selectedSlot}
+              onChange={(e) => { setSelectedSlot(e.target.value); setCurrentPage(1); }}
+              className="bg-[#3d2c1f] border border-amber-700 rounded px-4 py-2 text-[#e8dcc5] focus:outline-none focus:border-amber-500"
             >
+              {slotOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <select
+              value={selectedTier}
+              onChange={(e) => { setSelectedTier(e.target.value); setCurrentPage(1); }}
+              className="bg-[#3d2c1f] border border-amber-700 rounded px-4 py-2 text-[#e8dcc5] focus:outline-none focus:border-amber-500"
+            >
+              {tierOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <button onClick={resetFilters} className="bg-amber-700 hover:bg-amber-600 text-[#1a120b] font-bold px-4 py-2 rounded">
               Limpar Filtros
             </button>
           </div>
           <div className="text-sm text-amber-500/60 mt-3">
-            Mostrando {filteredItems.length} de {items.length} itens
+            Mostrando {items.length} de {total} itens
           </div>
         </div>
 
         {/* Tabela */}
         <div className="bg-[#2c2118] rounded-lg border border-amber-800/40 overflow-hidden">
-          <h2 className="text-xl font-semibold p-4 border-b border-amber-800/40">
-            📦 Itens Cadastrados
-          </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-[#3d2c1f] text-amber-300">
@@ -314,23 +320,21 @@ export default function AdminItemsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center p-8 text-amber-500/60">
-                      {searchTerm || selectedSlot ? 'Nenhum item encontrado com os filtros' : 'Nenhum item cadastrado'}
-                    </td>
-                  </tr>
+                {loading ? (
+                  <tr><td colSpan={7} className="text-center p-8">Carregando...</td></tr>
+                ) : items.length === 0 ? (
+                  <tr><td colSpan={7} className="text-center p-8 text-amber-500/60">
+                    {searchTerm || selectedSlot || selectedTier ? 'Nenhum item encontrado com os filtros' : 'Nenhum item cadastrado'}
+                   </td></tr>
                 ) : (
-                  filteredItems.map((item) => (
+                  items.map((item) => (
                     <tr key={item.id} className="border-b border-amber-800/20 hover:bg-[#3d2c1f]/50">
                       <td className="p-3">
                         <img
                           src={getItemIconUrl(item.unique_name, 40)}
                           alt={item.name_pt}
                           className="w-10 h-10 object-contain"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://placehold.co/40x40?text=?';
-                          }}
+                          onError={(e) => (e.target as HTMLImageElement).src = 'https://placehold.co/40x40?text=?'}
                         />
                       </td>
                       <td className="p-3">{item.id}</td>
@@ -339,16 +343,10 @@ export default function AdminItemsPage() {
                       <td className="p-3">T{item.tier}</td>
                       <td className="p-3">{item.slot_type || '-'}</td>
                       <td className="p-3 space-x-2">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="bg-amber-600 hover:bg-amber-500 text-[#1a120b] px-3 py-1 rounded text-xs font-bold"
-                        >
+                        <button onClick={() => handleEdit(item)} className="bg-amber-600 hover:bg-amber-500 text-[#1a120b] px-3 py-1 rounded text-xs font-bold">
                           Editar
                         </button>
-                        <button
-                          onClick={() => handleDelete(item.id, item.name_pt)}
-                          className="bg-red-800 hover:bg-red-700 text-white px-3 py-1 rounded text-xs"
-                        >
+                        <button onClick={() => handleDelete(item.id, item.name_pt)} className="bg-red-800 hover:bg-red-700 text-white px-3 py-1 rounded text-xs">
                           Deletar
                         </button>
                       </td>
@@ -358,6 +356,29 @@ export default function AdminItemsPage() {
               </tbody>
             </table>
           </div>
+          
+          {/* Paginação */}
+          {totalPages > 1 && (
+            <div className="flex justify-center gap-2 p-4 border-t border-amber-800/40">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-[#3d2c1f] rounded disabled:opacity-50 hover:bg-amber-700 transition"
+              >
+                Anterior
+              </button>
+              <span className="px-4 py-1 bg-amber-700/30 rounded">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 bg-[#3d2c1f] rounded disabled:opacity-50 hover:bg-amber-700 transition"
+              >
+                Próxima
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
