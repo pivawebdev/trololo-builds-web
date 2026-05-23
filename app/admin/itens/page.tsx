@@ -4,6 +4,10 @@
 import { useEffect, useState } from 'react';
 import { getItemIconUrl } from '@/lib/albionApi'; // 👈 Importação da nossa nova função
 
+import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { Search, Filter } from 'lucide-react';
+
 interface Item {
   id: number;
   unique_name: string;
