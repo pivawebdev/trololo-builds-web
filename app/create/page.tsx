@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Edit3, Save, Eye, X, Search, Loader2 } from 'lucide-react';
 //import { Auth, ThemeSupa } from '@supabase/auth-ui-react';
@@ -34,6 +35,7 @@ const slotPositions: Record<string, { top: string; left: string }> = {
 
 export default function CreateBuildPage() {
   const [user, setUser] = useState<any>(null);
+   const router = useRouter();  // 👈 Adicionar esta linha
   const [showAuth, setShowAuth] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -48,6 +50,7 @@ export default function CreateBuildPage() {
   const [loadingSlots, setLoadingSlots] = useState<Record<string, boolean>>({});
   const [searchTermBySlot, setSearchTermBySlot] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<any[]>([]);
+  const router = useRouter();
 
   // Auth
   useEffect(() => {
