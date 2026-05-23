@@ -30,6 +30,10 @@ export default function RootLayout({
                   Albion Tools
                 </span>
               </Link>
+              // Dentro do nav, adicione:
+<Link href="/builds" className="text-[#a08871] hover:text-[#e6a817] transition-colors">
+  Builds
+</Link>
               
               <nav className="hidden md:flex items-center gap-8 text-sm font-bold uppercase tracking-wider">
                 <Link href="/" className="text-[#e6a817] border-b-2 border-[#e6a817] pb-1">Painel Inicial</Link>
