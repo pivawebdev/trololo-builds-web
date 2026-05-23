@@ -6,11 +6,14 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// GET - Buscar build específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params; // 👈 Aguardar a Promise
+    
     const { data, error } = await supabase
       .from('saved_builds')
       .select(`
@@ -21,7 +24,7 @@ export async function GET(
           description
         )
       `)
-      .eq('id', parseInt(params.id))
+      .eq('id', parseInt(id))
       .single();
 
     if (error) throw error;

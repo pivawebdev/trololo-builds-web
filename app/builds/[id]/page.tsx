@@ -50,7 +50,9 @@ export default function BuildDetailPage() {
         setLoading(false);
       }
     };
-    loadBuild();
+    if (params.id) {
+      loadBuild();
+    }
   }, [params.id]);
 
   const handleDelete = async () => {
