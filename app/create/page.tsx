@@ -369,20 +369,25 @@ export default function CreateBuildPage() {
       </div>
 
       {/* Modal de Login */}
+            {/* Modal de Login - Versão simplificada */}
       {showAuth && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl p-8 max-w-md w-full">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Login</h2>
-              <button onClick={() => setShowAuth(false)}>
+              <button onClick={() => setShowAuth(false)} className="hover:opacity-70">
                 <X size={24} />
               </button>
             </div>
-            <Auth
-              supabaseClient={supabase}
-              appearance={{ theme: ThemeSupa }}
-              providers={['google', 'github']}
-            />
+            <p className="text-center text-gray-600 py-8">
+              🔐 Funcionalidade de login em breve!
+            </p>
+            <button
+              onClick={() => setShowAuth(false)}
+              className="w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl font-bold transition"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}
