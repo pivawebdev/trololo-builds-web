@@ -69,14 +69,15 @@ export default function BuildsPage() {
     loadBuilds();
   }, [currentPage, searchTerm, selectedCategory]);
 
+  // 👇 FUNÇÃO CORRIGIDA: retorna string, não null
+  const getItemIcon = (itemId: string | null, size = 50): string => {
+    if (!itemId) return '';
+    return `https://render.albiononline.com/v1/item/${itemId}.png?size=${size}`;
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('pt-BR');
-  };
-
-  const getItemIcon = (itemId: string | null) => {
-    if (!itemId) return null;
-    return `https://render.albiononline.com/v1/item/${itemId}.png?size=50`;
   };
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
@@ -184,27 +185,52 @@ export default function BuildsPage() {
                     <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-2 p-4">
                       {build.weapon_item && (
                         <div className="bg-[#2c2118]/80 rounded-lg flex items-center justify-center">
-                          <img src={getItemIcon(build.weapon_item)} alt="Arma" className="w-12 h-12 object-contain" />
+                          <img 
+                            src={getItemIcon(build.weapon_item, 50)} 
+                            alt="Arma" 
+                            className="w-12 h-12 object-contain"
+                            onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                          />
                         </div>
                       )}
                       {build.head_item && (
                         <div className="bg-[#2c2118]/80 rounded-lg flex items-center justify-center">
-                          <img src={getItemIcon(build.head_item)} alt="Cabeça" className="w-12 h-12 object-contain" />
+                          <img 
+                            src={getItemIcon(build.head_item, 50)} 
+                            alt="Cabeça" 
+                            className="w-12 h-12 object-contain"
+                            onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                          />
                         </div>
                       )}
                       {build.armor_item && (
                         <div className="bg-[#2c2118]/80 rounded-lg flex items-center justify-center">
-                          <img src={getItemIcon(build.armor_item)} alt="Peito" className="w-12 h-12 object-contain" />
+                          <img 
+                            src={getItemIcon(build.armor_item, 50)} 
+                            alt="Peito" 
+                            className="w-12 h-12 object-contain"
+                            onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                          />
                         </div>
                       )}
                       {build.shoes_item && (
                         <div className="bg-[#2c2118]/80 rounded-lg flex items-center justify-center">
-                          <img src={getItemIcon(build.shoes_item)} alt="Botas" className="w-12 h-12 object-contain" />
+                          <img 
+                            src={getItemIcon(build.shoes_item, 50)} 
+                            alt="Botas" 
+                            className="w-12 h-12 object-contain"
+                            onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                          />
                         </div>
                       )}
                       {build.cape_item && (
                         <div className="bg-[#2c2118]/80 rounded-lg flex items-center justify-center">
-                          <img src={getItemIcon(build.cape_item)} alt="Capa" className="w-12 h-12 object-contain" />
+                          <img 
+                            src={getItemIcon(build.cape_item, 50)} 
+                            alt="Capa" 
+                            className="w-12 h-12 object-contain"
+                            onError={(e) => (e.target as HTMLImageElement).style.display = 'none'}
+                          />
                         </div>
                       )}
                     </div>
