@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { Edit3, Save, Eye, X, Search, Loader2 } from 'lucide-react';
-import { Auth, ThemeSupa } from '@supabase/auth-ui-react';
+//import { Auth, ThemeSupa } from '@supabase/auth-ui-react';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
