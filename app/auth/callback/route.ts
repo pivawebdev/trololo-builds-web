@@ -1,4 +1,3 @@
-import { getSupabaseClient } from '@/lib/supabaseClient';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -6,8 +5,8 @@ export async function GET(request: Request) {
   const code = requestUrl.searchParams.get('code');
 
   if (code) {
-    const supabase = getSupabaseClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    // TODO: trocar o código por uma sessão usando o Supabase
+    console.log('Código recebido:', code);
   }
 
   return NextResponse.redirect(new URL('/admin/itens', requestUrl.origin));
