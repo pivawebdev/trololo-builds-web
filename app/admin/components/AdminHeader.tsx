@@ -1,17 +1,12 @@
 'use client';
 
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 
-// Criar cliente Supabase no client component
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export default function AdminHeader({ title }: { title?: string }) {
   const router = useRouter();
+  const supabase = getSupabaseClient();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();

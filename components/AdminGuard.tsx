@@ -1,19 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const router = useRouter();
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -41,7 +37,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     };
 
     checkAdmin();
-  }, [router]);
+  }, [router, supabase]);
 
   if (loading) {
     return (

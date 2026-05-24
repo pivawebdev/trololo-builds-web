@@ -1,23 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-// Cliente Supabase (apenas no cliente)
-let supabase: any = null;
+import { getSupabaseClient } from '@/lib/supabaseClient';
 
 export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
-    // Inicializar Supabase apenas no cliente
-    supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    // Verificar se já está logado
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -26,7 +17,6 @@ export default function AdminLoginPage() {
     };
     checkSession();
 
-    // Escutar mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: string, session: any) => {
         if (event === 'SIGNED_IN' && session) {
@@ -36,7 +26,7 @@ export default function AdminLoginPage() {
     );
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
   const handleDiscordLogin = async () => {
     setLoading(true);
