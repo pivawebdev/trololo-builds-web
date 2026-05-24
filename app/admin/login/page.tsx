@@ -11,15 +11,13 @@ export default function AdminLoginPage() {
     setError('');
     
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
-    if (!supabaseUrl || !supabaseAnonKey) {
-      setError('Erro de configuração: URLs do Supabase não definidas');
+    if (!supabaseUrl) {
+      setError('Erro de configuração: URL do Supabase não definida');
       setLoading(false);
       return;
     }
     
-    // Redirecionar diretamente para o Discord via Supabase
     const redirectTo = `${window.location.origin}/auth/callback`;
     const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(redirectTo)}`;
     
