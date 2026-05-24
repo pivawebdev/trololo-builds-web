@@ -1,51 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { getSupabaseClient } from '@/lib/supabaseClient';
+import { useState } from 'react';
 
 export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const supabase = getSupabaseClient();
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = '/admin/itens';
-      }
-    };
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: string, session: any) => {
-        if (event === 'SIGNED_IN' && session) {
-          window.location.href = '/admin/itens';
-        }
-      }
-    );
-
-    return () => subscription.unsubscribe();
-  }, [supabase]);
-
-  const handleDiscordLogin = async () => {
+  const handleDiscordLogin = () => {
     setLoading(true);
     setError('');
     
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'discord',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      
-      if (error) throw error;
-    } catch (err: any) {
-      console.error('Erro:', err);
-      setError(err.message || 'Erro ao fazer login');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setError('Erro de configuração: URLs do Supabase não definidas');
       setLoading(false);
+      return;
     }
+    
+    // Redirecionar diretamente para o Discord via Supabase
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=discord&redirect_to=${encodeURIComponent(redirectTo)}`;
+    
+    window.location.href = authUrl;
   };
 
   return (
