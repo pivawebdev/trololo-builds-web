@@ -27,7 +27,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
       // Lista de emails autorizados
       const authorizedEmails = [
-        'seu-email@exemplo.com',  // Substitua pelo seu email do Discord
+        'seu-email@exemplo.com',  // Substitua pelo seu email
       ];
       
       if (user.email && authorizedEmails.includes(user.email)) {

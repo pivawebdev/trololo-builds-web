@@ -1,11 +1,16 @@
 'use client';
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 
+// Criar cliente Supabase no client component
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 export default function AdminHeader({ title }: { title?: string }) {
-  const supabase = createClientComponentClient();
   const router = useRouter();
 
   const handleLogout = async () => {
