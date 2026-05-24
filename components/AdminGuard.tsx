@@ -1,14 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const supabase = createClientComponentClient();
   const router = useRouter();
 
   useEffect(() => {
@@ -17,13 +21,13 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
       if (!user) {
         router.push('/admin/login');
+        setLoading(false);
         return;
       }
 
       // Lista de emails autorizados
       const authorizedEmails = [
-        'seu-email@exemplo.com',
-        'admin@trololo.com',
+        'seu-email@exemplo.com',  // Substitua pelo seu email do Discord
       ];
       
       if (user.email && authorizedEmails.includes(user.email)) {
@@ -37,7 +41,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     };
 
     checkAdmin();
-  }, [router, supabase]);
+  }, [router]);
 
   if (loading) {
     return (
