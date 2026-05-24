@@ -189,8 +189,8 @@ function CreateBuildContent() {
 
     setSaving(true);
     try {
-      const creatorId = user?.id || 'user_' + Math.random().toString(36).substr(2, 9);
-      const guildId = 'z4zH-G0hRh2E0csA8r6_zw';
+      const creatorId = '484881833394307072';
+      const guildId = '1329881434181206057';
 
       const payload = {
         build_name: build.title,
