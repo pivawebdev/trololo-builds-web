@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Edit3, X, Search, Loader2 } from 'lucide-react';
@@ -32,7 +32,8 @@ const slotPositions: Record<string, { top: string; left: string }> = {
   mount: { top: '85%', left: '42%' }
 };
 
-export default function CreateBuildPage() {
+// Componente interno que usa useSearchParams
+function CreateBuildContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('edit');
@@ -72,7 +73,6 @@ export default function CreateBuildPage() {
       if (error) throw error;
 
       if (data) {
-        // Mapear os campos do banco para o formato do formulário
         const items: Record<string, string> = {};
         
         if (data.head_item) items.head = data.head_item;
@@ -418,5 +418,21 @@ export default function CreateBuildPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Componente principal com Suspense
+export default function CreateBuildPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-zinc-100 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="animate-spin w-12 h-12 text-amber-600 mx-auto mb-4" />
+          <p className="text-amber-800">Carregando...</p>
+        </div>
+      </div>
+    }>
+      <CreateBuildContent />
+    </Suspense>
   );
 }
