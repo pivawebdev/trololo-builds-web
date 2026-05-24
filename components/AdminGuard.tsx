@@ -20,24 +20,14 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         return;
       }
 
-      // Lista de emails autorizados (você pode adicionar mais)
+      // Lista de emails autorizados
       const authorizedEmails = [
         'seu-email@exemplo.com',
         'admin@trololo.com',
-        // Adicione os emails dos membros da sua guilda aqui
       ];
       
       if (user.email && authorizedEmails.includes(user.email)) {
         setIsAuthorized(true);
-      } else if (user.user_metadata?.provider_id) {
-        // Alternativa: verificar pelo ID do Discord
-        const authorizedDiscordIds = ['123456789', '987654321'];
-        if (authorizedDiscordIds.includes(user.user_metadata.provider_id)) {
-          setIsAuthorized(true);
-        } else {
-          await supabase.auth.signOut();
-          router.push('/admin/login?error=unauthorized');
-        }
       } else {
         await supabase.auth.signOut();
         router.push('/admin/login?error=unauthorized');
