@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 import { Edit3, X, Search, Loader2 } from 'lucide-react';
 
@@ -11,14 +11,14 @@ const supabase = createClient(
 );
 
 const slotsConfig = [
-  { id: 'head', label: 'Cabeça', emoji: '👑' },
-  { id: 'armor', label: 'Peito', emoji: '🛡️' },
-  { id: 'shoes', label: 'Botas', emoji: '👟' },
-  { id: 'weapon', label: 'Arma', emoji: '⚔️' },
-  { id: 'offhand', label: 'Off-hand', emoji: '💥' },
-  { id: 'cape', label: 'Capa', emoji: '🧥' },
-  { id: 'bag', label: 'Bolsa', emoji: '🎒' },
-  { id: 'mount', label: 'Montaria', emoji: '🐎' }
+  { id: 'head', label: 'Cabeça', emoji: '👑', dbField: 'head_item' },
+  { id: 'armor', label: 'Peito', emoji: '🛡️', dbField: 'armor_item' },
+  { id: 'shoes', label: 'Botas', emoji: '👟', dbField: 'shoes_item' },
+  { id: 'weapon', label: 'Arma', emoji: '⚔️', dbField: 'weapon_item' },
+  { id: 'offhand', label: 'Off-hand', emoji: '💥', dbField: null },
+  { id: 'cape', label: 'Capa', emoji: '🧥', dbField: 'cape_item' },
+  { id: 'bag', label: 'Bolsa', emoji: '🎒', dbField: null },
+  { id: 'mount', label: 'Montaria', emoji: '🐎', dbField: null }
 ];
 
 const slotPositions: Record<string, { top: string; left: string }> = {
@@ -34,10 +34,13 @@ const slotPositions: Record<string, { top: string; left: string }> = {
 
 export default function CreateBuildPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('edit');
+  
   const [user, setUser] = useState<any>(null);
-  const [showAuth, setShowAuth] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadingBuild, setLoadingBuild] = useState(false);
   
   const [build, setBuild] = useState({
     title: "Minha Build Incrível",
@@ -49,6 +52,48 @@ export default function CreateBuildPage() {
   const [loadingSlots, setLoadingSlots] = useState<Record<string, boolean>>({});
   const [searchTermBySlot, setSearchTermBySlot] = useState<Record<string, string>>({});
   const [categories, setCategories] = useState<any[]>([]);
+
+  // Carregar dados da build para edição
+  useEffect(() => {
+    if (editId) {
+      loadBuildForEdit(editId);
+    }
+  }, [editId]);
+
+  const loadBuildForEdit = async (id: string) => {
+    setLoadingBuild(true);
+    try {
+      const { data, error } = await supabase
+        .from('saved_builds')
+        .select('*')
+        .eq('id', parseInt(id))
+        .single();
+
+      if (error) throw error;
+
+      if (data) {
+        // Mapear os campos do banco para o formato do formulário
+        const items: Record<string, string> = {};
+        
+        if (data.head_item) items.head = data.head_item;
+        if (data.armor_item) items.armor = data.armor_item;
+        if (data.shoes_item) items.shoes = data.shoes_item;
+        if (data.weapon_item) items.weapon = data.weapon_item;
+        if (data.cape_item) items.cape = data.cape_item;
+        
+        setBuild({
+          title: data.build_name || "Minha Build Incrível",
+          category_id: data.category_id,
+          items: items,
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao carregar build:', error);
+      alert('Erro ao carregar build para edição');
+    } finally {
+      setLoadingBuild(false);
+    }
+  };
 
   // Auth
   useEffect(() => {
@@ -159,8 +204,16 @@ export default function CreateBuildPage() {
         category_id: build.category_id || null
       };
 
-      const res = await fetch('/api/builds', {
-        method: 'POST',
+      let url = '/api/builds';
+      let method = 'POST';
+      
+      if (editId) {
+        url = `/api/builds?id=${editId}`;
+        method = 'PUT';
+      }
+
+      const res = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -171,7 +224,7 @@ export default function CreateBuildPage() {
         throw new Error(data.error || 'Erro ao salvar');
       }
 
-      alert('✅ Build salva com sucesso!');
+      alert(editId ? '✅ Build atualizada com sucesso!' : '✅ Build salva com sucesso!');
       router.push('/builds');
       
     } catch (error: any) {
@@ -197,12 +250,12 @@ export default function CreateBuildPage() {
     loadAllSlots();
   }, []);
 
-  if (loading && Object.keys(itemsBySlot).length === 0) {
+  if ((loading && Object.keys(itemsBySlot).length === 0) || loadingBuild) {
     return (
       <div className="min-h-screen bg-zinc-100 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="animate-spin w-12 h-12 text-amber-600 mx-auto mb-4" />
-          <p className="text-amber-800">Carregando itens...</p>
+          <p className="text-amber-800">{loadingBuild ? 'Carregando build para edição...' : 'Carregando itens...'}</p>
         </div>
       </div>
     );
@@ -211,7 +264,9 @@ export default function CreateBuildPage() {
   return (
     <div className="min-h-screen bg-zinc-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-5xl font-bold text-center mb-10 text-amber-950">🛠️ Criador de Builds</h1>
+        <h1 className="text-5xl font-bold text-center mb-10 text-amber-950">
+          {editId ? '✏️ Editar Build' : '🛠️ Criador de Builds'}
+        </h1>
 
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
           {/* PREVIEW */}
@@ -356,35 +411,12 @@ export default function CreateBuildPage() {
                 saving ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
-              {saving ? <Loader2 className="animate-spin inline mr-2" size={28} /> : '💾'} SALVAR BUILD
+              {saving ? <Loader2 className="animate-spin inline mr-2" size={28} /> : (editId ? '✏️' : '💾')}
+              {' '}{editId ? 'ATUALIZAR BUILD' : 'SALVAR BUILD'}
             </button>
           </div>
         </div>
       </div>
-
-      {/* Modal de Login */}
-      {showAuth && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold">Login</h2>
-              <button onClick={() => setShowAuth(false)}>
-                <X size={24} />
-              </button>
-            </div>
-            <p className="text-center text-gray-600 py-8">🔐 Funcionalidade de login em breve!</p>
-            <button
-              onClick={() => {
-                setShowAuth(false);
-                saveBuild();
-              }}
-              className="w-full mt-4 bg-amber-600 hover:bg-amber-700 text-white py-3 rounded-xl font-bold transition"
-            >
-              Continuar sem login
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
