@@ -1,13 +1,22 @@
-import { NextResponse } from 'next/server';
+// app/auth/callback/route.ts
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get('code');
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/'
 
-  if (code) {
-    // TODO: trocar o código por uma sessão usando o Supabase
-    console.log('Código recebido:', code);
+  if (!code) {
+    return NextResponse.redirect(`${origin}/auth/error`)
   }
 
-  return NextResponse.redirect(new URL('/admin/itens', requestUrl.origin));
+  const supabase = createClient()
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+  if (error) {
+    return NextResponse.redirect(`${origin}/auth/error`)
+  }
+
+  return NextResponse.redirect(`${origin}${next}`)
 }
