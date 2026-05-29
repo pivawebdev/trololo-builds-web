@@ -1,9 +1,9 @@
 'use client';
 
-import { createClient } from '@/lib/supabaseClient';   // ← Import corrigido
+import { getSupabaseClient } from '@/lib/supabaseClient';   // ← Correto
 
 export default function LoginButton() {
-  const supabase = createClient();
+  const supabase = getSupabaseClient();
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
